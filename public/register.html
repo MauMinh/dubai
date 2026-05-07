@@ -55,7 +55,13 @@
                             <label class="form-label small fw-bold">Họ và tên</label>
                             <input type="text" id="full_name" class="form-control" placeholder="Nguyễn Văn A">
                         </div>
-                        
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Mã sinh viên</label>
+                            <input type="text" id="student_code" class="form-control" placeholder="Ví dụ: SV001">
+                            <small class="text-muted" style="font-size: 0.7rem;">Dùng để tự động cập nhật thông tin CLB nếu bạn đã là thành viên.</small>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Tên đăng nhập</label>
                             <input type="text" id="username" class="form-control" placeholder="user123">
@@ -81,14 +87,16 @@
 
     <script>
         async function handleRegister() {
-            const fullName = document.getElementById('full_name').value;
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+            const fullName = document.getElementById('full_name').value.trim();
+            const studentCode = document.getElementById('student_code').value.trim();
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
             const msg = document.getElementById('message');
 
-            if(!fullName || !user || !pass) {
+            // Kiểm tra đầu vào
+            if(!fullName || !studentCode || !user || !pass) {
                 msg.className = "text-danger text-center mt-3 small fw-bold";
-                msg.innerText = "Vui lòng không để trống thông tin!";
+                msg.innerText = "Vui lòng điền đầy đủ các trường thông tin!";
                 return;
             }
 
@@ -97,20 +105,23 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        full_name: fullName, 
+                        full_name: fullName,
+                        student_code: studentCode, // Gửi thêm MSV lên Server
                         username: user, 
                         password: pass 
                     })
                 });
 
                 const result = await response.json();
+                
                 if (result.status === "success") {
                     msg.className = "text-success text-center mt-3 small fw-bold";
                     msg.innerHTML = "✅ Đăng ký thành công!<br>Đang chuyển hướng...";
+                    // Đợi 1.5 giây rồi chuyển về trang đăng nhập
                     setTimeout(() => window.location.href = 'login.html', 1500);
                 } else {
                     msg.className = "text-danger text-center mt-3 small fw-bold";
-                    msg.innerText = "❌ " + result.message;
+                    msg.innerText = "❌ " + (result.message || "Đăng ký thất bại!");
                 }
             } catch (error) {
                 msg.className = "text-danger text-center mt-3 small fw-bold";

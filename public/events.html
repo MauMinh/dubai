@@ -8,14 +8,13 @@
     <style>
         body { background: #f4f7f6; font-family: 'Inter', sans-serif; }
         .card-custom { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        /* Đồng bộ màu với login.html */
         .header-grad { 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
             border-radius: 20px 20px 0 0; 
             padding: 30px;
         }
         .form-label { font-weight: 600; color: #4a5568; }
-        .form-control { border-radius: 10px; padding: 12px; border: 1px solid #ddd; }
+        .form-control, .form-select { border-radius: 10px; padding: 12px; border: 1px solid #ddd; }
         .btn-save { 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none; border-radius: 10px; padding: 15px; font-weight: 700; color: white;
@@ -34,25 +33,37 @@
                     </div>
                     <div class="card-body p-4 p-lg-5">
                         <div class="row g-4">
+                            <!-- Chọn Câu Lạc Bộ -->
                             <div class="col-12">
-                                <label class="form-label small text-uppercase">Tiêu đề sự kiện</label>
+                                <label class="form-label small text-uppercase">Thuộc Câu Lạc Bộ (*)</label>
+                                <select id="club_id" class="form-select">
+                                    <option value="">-- Đang tải danh sách CLB --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small text-uppercase">Tiêu đề sự kiện (*)</label>
                                 <input type="text" id="title" class="form-control" placeholder="Workshop Lập trình...">
                             </div>
+                            
                             <div class="col-12">
                                 <label class="form-label small text-uppercase">Mô tả</label>
-                                <textarea id="description" class="form-control" rows="3"></textarea>
+                                <textarea id="description" class="form-control" rows="3" placeholder="Nội dung chi tiết sự kiện..."></textarea>
                             </div>
+
                             <div class="col-md-6">
-                                <label class="form-label small text-uppercase">Ngày diễn ra</label>
+                                <label class="form-label small text-uppercase">Ngày diễn ra (*)</label>
                                 <input type="datetime-local" id="event_date" class="form-control">
                             </div>
+
                             <div class="col-md-6">
-                                <label class="form-label small text-uppercase">Địa điểm</label>
+                                <label class="form-label small text-uppercase">Địa điểm (*)</label>
                                 <input type="text" id="location" class="form-control" placeholder="Phòng B2.01">
                             </div>
+
                             <div class="col-12 mt-5 d-flex gap-3">
                                 <button onclick="saveEvent()" class="btn btn-save flex-grow-1 shadow-sm">LƯU SỰ KIỆN</button>
-                                <a href="index.html" class="btn btn-light px-4 border rounded-3">Hủy</a>
+                                <a href="index.html" class="btn btn-light px-4 border rounded-3 d-flex align-items-center">Hủy</a>
                             </div>
                         </div>
                     </div>
@@ -62,16 +73,38 @@
     </div>
 
     <script>
+        // Tự động tải danh sách CLB khi trang vừa load
+        document.addEventListener('DOMContentLoaded', loadClubs);
+
+        async function loadClubs() {
+            const clubSelect = document.getElementById('club_id');
+            try {
+                const response = await fetch('index.php/club/list');
+                const clubs = await response.json();
+
+                if (clubs.length > 0) {
+                    clubSelect.innerHTML = '<option value="">-- Chọn Câu Lạc Bộ --</option>' + 
+                        clubs.map(c => `<option value="${c.id}">${c.club_name}</option>`).join('');
+                } else {
+                    clubSelect.innerHTML = '<option value="">Chưa có CLB nào</option>';
+                }
+            } catch (error) {
+                clubSelect.innerHTML = '<option value="">Lỗi tải danh sách CLB</option>';
+            }
+        }
+
         async function saveEvent() {
             const user = JSON.parse(localStorage.getItem('user'));
             if (!user) { window.location.href = 'login.html'; return; }
 
+            const club_id = document.getElementById('club_id').value;
             const title = document.getElementById('title').value.trim();
             const description = document.getElementById('description').value.trim();
             const event_date = document.getElementById('event_date').value;
             const location = document.getElementById('location').value.trim();
 
-            if (!title || !event_date || !location) {
+            // Kiểm tra đầu vào bao gồm cả club_id
+            if (!club_id || !title || !event_date || !location) {
                 alert("Vui lòng điền đủ các trường có dấu (*)");
                 return;
             }
@@ -80,7 +113,14 @@
                 const response = await fetch('index.php/event/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, description, event_date, location, created_by: user.id })
+                    body: JSON.stringify({ 
+                        club_id, 
+                        title, 
+                        description, 
+                        event_date, 
+                        location, 
+                        created_by: user.id 
+                    })
                 });
 
                 const result = await response.json();
@@ -91,7 +131,7 @@
                     alert("❌ Thất bại: " + result.message);
                 }
             } catch (error) {
-                alert("⚠️ Không thể kết nối Server. Trung kiểm tra XAMPP nhé!");
+                alert("⚠️ Lỗi kết nối Server.");
             }
         }
     </script>

@@ -34,6 +34,14 @@ if ($action == 'register' && $method == 'POST') {
         $result = $service->register($data); 
         
         if ($result) {
+            $newUserId = $db->lastInsertId();
+            $studentCode = $data->student_code;
+
+            // 3. Thực hiện đồng bộ sang bảng member
+            // Tìm những dòng có cùng student_code mà user_id đang NULL để nối lại
+            $sqlSync = "UPDATE member SET user_id = ? WHERE student_code = ? AND user_id IS NULL";
+            $stmtSync = $db->prepare($sqlSync);
+            $stmtSync->execute([$newUserId, $studentCode]);
             echo json_encode(["status" => "success", "message" => "Đăng ký thành công!"]);
         } else {
             echo json_encode(["status" => "error", "message" => "Tên đăng nhập đã tồn tại"]);
@@ -46,5 +54,26 @@ if ($action == 'register' && $method == 'POST') {
 if ($action == 'list' && $method == 'GET') {
     $users = $service->getUserList();
     echo json_encode(["status" => "success", "data" => $users]);
+    exit;
+}
+// Xử lý Cập nhật quyền hạn
+if ($action == 'update-role' && $method == 'POST') {
+    $data = json_decode(file_get_contents("php://input"));
+    
+    if (isset($data->id) && isset($data->role)) {
+        // Lấy thêm club_id từ data gửi lên (nếu không có thì mặc định là null)
+        $club_id = isset($data->club_id) ? $data->club_id : null;
+        
+        // Truyền thêm biến $club_id vào hàm
+        $result = $service->updateUserRole($data->id, $data->role, $club_id);
+        
+        if ($result) {
+            echo json_encode(["status" => "success", "message" => "Cập nhật quyền thành công"]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "Cập nhật thất bại"]);
+        }
+    } else {
+        echo json_encode(["status" => "error", "message" => "Dữ liệu thiếu ID hoặc Role"]);
+    }
     exit;
 }

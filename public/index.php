@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit;
 }
 
-// Phân tách URL
+// Phân tách URL (Dạng index.php/resource/action)
 $path = $_SERVER['PATH_INFO'] ?? '';
 $uri = explode('/', trim($path, '/'));
 
@@ -29,16 +29,82 @@ switch ($resource) {
         include_once __DIR__ . '/../src/Controllers/UserController.php';
         $controller = new UserController($db);
         if ($action == 'login') $controller->login();
-        elseif ($action == 'register') $controller->register();
+        elseif ($action == 'register')
+            {
+            $controller->register();
+            }
+         elseif ($action == 'list') {         // Thêm dòng này để load danh sách
+        $controller->list();
+    } elseif ($action == 'update-role') {  // Thêm dòng này để xử lý phân quyền
+        $controller->updateRole();
+    }
         break;
 
     case 'event':
         include_once __DIR__ . '/../src/Controllers/EventController.php';
         $controller = new EventController($db);
-        if ($action == 'list') $controller->list();
+        
+        if ($action == 'create') {
+            $controller->create();
+        } elseif ($action == 'list') {
+            $controller->list();
+        }
         break;
 
+    case 'club':
+        include_once __DIR__ . '/../src/Repositories/ClubRepository.php';
+        include_once __DIR__ . '/../src/Services/ClubService.php';
+        include_once __DIR__ . '/../src/Controllers/ClubController.php';
 
+        $clubRepo = new ClubRepository($db);
+        $clubService = new ClubService($clubRepo);
+        $clubController = new ClubController($clubService);
+
+        // Gọi hàm xử lý request của ClubController
+        $clubController->handleRequest();
+        break;
+
+    case 'registration':
+        include_once __DIR__ . '/../src/Controllers/RegistrationController.php';
+        $controller = new RegistrationController($db);
+        
+        if ($action == 'join') {
+            $controller->join(); 
+        } elseif ($action == 'list-all') {
+            $controller->listAll();
+        } elseif ($action == 'update-status') {
+            $controller->updateStatus();
+        } elseif ($action == 'my-activities') {
+            $controller->getMyActivities();
+        }
+        break;
+        case 'registrationclub':
+    include_once __DIR__ . '/../src/Controllers/RegistrationClubController.php';
+    $controller = new RegistrationClubController($db);
+    
+    if ($action == 'join') {
+        $controller->join(); 
+    } elseif ($action == 'list-all') {
+        $controller->listAll();
+    } elseif ($action == 'update-status') {
+        $controller->updateStatus();
+    }
+    break;
+
+case 'member':
+    include_once __DIR__ . '/../src/Controllers/MemberController.php';
+    $controller = new MemberController($db);    
+    
+    if ($action == 'list') {
+        $controller->list();
+    } elseif ($action == 'get') {
+        $controller->get();
+    } elseif ($action == 'save') {
+        $controller->save();
+    } elseif ($action == 'delete') {
+        $controller->delete();
+    }
+    break;
         
         case 'profile':
         include_once __DIR__ . '/../src/Controllers/ProfileController.php';
@@ -48,23 +114,6 @@ switch ($resource) {
             $controller->update(); // Gọi hàm update trong Controller
         } else {
             echo json_encode(["status" => "error", "message" => "Hành động không hợp lệ"]);
-        }
-        break;
-
-
-    case 'registration':
-        include_once __DIR__ . '/../src/Controllers/RegistrationController.php';
-        $controller = new RegistrationController($db);
-        
-        // Điều hướng các chức năng của Đăng ký
-        if ($action == 'join') {
-            $controller->join(); 
-        } elseif ($action == 'list-all') {
-            $controller->listAll();
-        } elseif ($action == 'update-status') {
-            $controller->updateStatus();
-        } elseif ($action == 'my-activities') {
-            $controller->getMyActivities();
         }
         break;
 

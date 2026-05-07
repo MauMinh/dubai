@@ -29,21 +29,40 @@ class UserRepository {
         }
         return null;
     }
-    public function register($data) {
-    // Kiểm tra trùng username
-    $check = "SELECT id FROM " . $this->table_name . " WHERE username = ?";
+  public function register($data) {
+    // Kiểm tra xem student_code đã có tài khoản chưa để tránh đăng ký trùng
+    $check = "SELECT id FROM users WHERE student_code = ? OR username = ?";
     $stmtCheck = $this->conn->prepare($check);
-    $stmtCheck->execute([$data->username]);
-    if ($stmtCheck->rowCount() > 0) return false;
+    $stmtCheck->execute([$data->student_code, $data->username]);
+    if($stmtCheck->rowCount() > 0) return false;
 
-    $query = "INSERT INTO " . $this->table_name . " (username, password, full_name, role) VALUES (?, ?, ?, ?)";
+    $query = "INSERT INTO users (full_name, student_code, username, password, role) 
+              VALUES (:full_name, :student_code, :username, :password, :role)";
+    
     $stmt = $this->conn->prepare($query);
+    
     return $stmt->execute([
-        $data->username,
-        $data->password,
-        $data->full_name,
-        $data->role
+        ':full_name' => $data->full_name,
+        ':student_code' => $data->student_code,
+        ':username' => $data->username,
+        ':password' => $data->password, // Lưu ý: Nên dùng password_hash() nếu làm thực tế
+        ':role' => $data->role
     ]);
+}
+    public function updateRole($id, $role, $club_id) {
+    try {
+        // Câu lệnh SQL cập nhật đồng thời cả Role và Club_id
+        $query = "UPDATE users SET role = :role, club_id = :club_id WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        
+        $stmt->bindParam(':role', $role);
+        $stmt->bindParam(':club_id', $club_id);
+        $stmt->bindParam(':id', $id);
+        
+        return $stmt->execute();
+    } catch (PDOException $e) {
+        return false;
     }
+}
 }
 ?>

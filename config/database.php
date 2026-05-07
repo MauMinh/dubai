@@ -1,7 +1,7 @@
 <?php
 class Database {
     private $host = "localhost";
-    private $db_name = "clb"; // Tên database từ file .sql của bạn
+    private $db_name = "clb_management"; // Tên database từ file .sql của bạn
     private $username = "root";           // Mặc định của XAMPP
     private $password = "";               // Mặc định của XAMPP là trống
     public $conn;
